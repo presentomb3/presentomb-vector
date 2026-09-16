@@ -1,0 +1,17 @@
+# Generated build and release artifacts
+/build/
+/build-*/
+/dist/
+/assets/TAN-LUNA-NEGRA.ttf
+
+# CMake and IDE output
+CMakeUserPresets.json
+.vs/
+*.sln
+*.vcxproj*
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.user
+*.suo

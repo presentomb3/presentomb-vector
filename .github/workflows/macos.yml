@@ -1,0 +1,53 @@
+name: macOS
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Universal VST3, AU, Standalone
+    runs-on: macos-14
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cache JUCE and build dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            build-macos/_deps
+            build-macos/JUCE
+          key: macos-juce-${{ hashFiles('CMakeLists.txt') }}
+
+      - name: Build universal macOS package
+        env:
+          ARCHS: arm64;x86_64
+          MACOSX_DEPLOYMENT_TARGET: '11.0'
+        run: bash package/build-macos.sh
+
+      - name: Verify architectures
+        run: |
+          lipo -info "build-macos/PresentombDSO2_artefacts/Release/VST3/presentomb vector.vst3/Contents/MacOS/presentomb vector"
+          lipo -info "build-macos/PresentombDSO2_artefacts/Release/AU/presentomb vector.component/Contents/MacOS/presentomb vector"
+          lipo -info "build-macos/PresentombDSO2_artefacts/Release/Standalone/presentomb vector.app/Contents/MacOS/presentomb vector"
+
+      - name: Upload macOS installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: presentomb-vector-macos-universal
+          path: dist/presentomb-vector-*-macos.dmg
+          if-no-files-found: error
+          retention-days: 14
